@@ -1,0 +1,37 @@
+apiVersion: v1
+# The API version for core Kubernetes resources like PVs, PVCs, and Services.
+
+kind: PersistentVolumeClaim
+# A PVC (PersistentVolumeClaim) is basically a *request* for storage.
+# Think of it like saying:
+#   “Hey Kubernetes, I need a disk of this size and type. 
+#    Please connect me to a PersistentVolume that matches.”
+
+metadata:
+  name: pvc-volume
+  # Name of the PersistentVolumeClaim.
+  # This name will be referenced in the MongoDB Deployment (mongodb.yaml)
+  # under volumes → persistentVolumeClaim → claimName.
+
+spec:
+  volumeName: pv-volume
+  # Directly binds this PVC to the PersistentVolume named 'pv-volume'.
+  # Usually, PVCs auto-bind to a matching PV (based on size, accessMode, and storageClass),
+  # but here we’re explicitly linking it for clarity and control.
+
+  storageClassName: standard
+  # Must match the storageClassName of the PV (in persistentVolume.yaml).
+  # This ensures the claim attaches to the correct type of storage.
+
+  accessModes:
+    - ReadWriteOnce
+    # Same as PV:
+    # - ReadWriteOnce (RWO): Only one Pod can mount this volume at a time.
+    # Ideal for MongoDB since it’s a single database instance.
+
+  resources:
+    requests:
+      storage: 1Gi
+      # The PVC requests 1Gi of space.
+      # Kubernetes will look for a PV that has *at least* this much capacity.
+      # Since your PV (pv-volume) also has 1Gi, it will bind perfectly.

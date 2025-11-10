@@ -1,0 +1,48 @@
+apiVersion: v1
+# The API version for basic Kubernetes objects (like PV, Service, Pod, ConfigMap).
+
+kind: PersistentVolume
+# 'PersistentVolume' (PV) is the actual *physical storage* in Kubernetes.
+# Think of it as a disk space (either on your host machine, NFS, or a cloud provider volume)
+# that Pods can use to store data that should survive restarts.
+
+metadata:
+  name: pv-volume
+  # A unique name for this PersistentVolume.
+  # It will be referenced indirectly through the PersistentVolumeClaim (PVC).
+  # The PVC (persistentVolumeClaim.yaml) will bind to this PV if it matches requirements.
+
+spec:
+  capacity:
+    storage: 1Gi
+    # Defines how much storage space this PV provides.
+    # Here: 1GiB (can be more if your database grows).
+
+  volumeMode: Filesystem
+  # This means the volume will be mounted as a normal filesystem.
+  # Alternative mode is 'Block' (rarely used for databases).
+
+  storageClassName: standard
+  # Defines the storage class (like a “category” of storage).
+  # The PVC must request the same 'storageClassName' for them to match and bind.
+  # 'standard' is the default storage class in many local or cloud setups.
+  # If left blank, Kubernetes may use the default storage class automatically.
+
+  accessModes:
+    - ReadWriteOnce
+    # Defines how this volume can be accessed:
+    # - ReadWriteOnce (RWO): Only one Pod can write to it at a time (common for databases)
+    # - ReadOnlyMany (ROX): Multiple Pods can read but not write
+    # - ReadWriteMany (RWX): Multiple Pods can read/write (needs NFS or cloud storage)
+    # Since MongoDB is stateful and runs on one Pod, RWO is ideal.
+
+  hostPath:
+    path: /data/
+    # 'hostPath' means this PV is using a folder from your *local machine (node)* for storage.
+    # Whatever gets written in MongoDB (/data/db inside container) will be saved here on your host.
+    # ⚠️ This works great for local testing but NOT for production clusters.
+    # In production, you’d use cloud storage like AWS EBS, GCP Persistent Disk, or NFS.
+
+    type: DirectoryOrCreate
+    # This tells Kubernetes:
+    # If the directory /data/ doesn’t exist on the host, create it automatically.

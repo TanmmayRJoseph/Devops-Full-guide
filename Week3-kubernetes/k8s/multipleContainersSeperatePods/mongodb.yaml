@@ -3,22 +3,61 @@
 # ------------------------------------------------------------------
 
 apiVersion: apps/v1
+# 'apps/v1' is the API version used for managing workloads like Deployments.
+# This version supports features like rolling updates and scaling.
+
 kind: Deployment
-meatdata:
+# A Deployment ensures that a specific number of identical Pods (replicas)
+# are running at all times. It also helps manage updates to Pods easily.
+
+metadata:
   name: mongodb-deployment
+  # This is the name of the Deployment object. 
+  # It will manage MongoDB Pods (usually 1 in this case).
+
 spec:
   replicas: 1
+  # Number of MongoDB Pods to run.
+  # For databases like MongoDB, usually only 1 replica is used 
+  # unless you're setting up a replica set.
+
   selector:
     matchLabels:
       app: mongodb
+  # This selector matches Pods that have the label `app: mongodb`.
+  # It tells the Deployment which Pods it controls.
+
   template:
-    meatdata:
+    metadata:
       labels:
         app: mongodb
+      # These labels are attached to the Pod created by this Deployment.
+      # The Service defined later will use the same label to route traffic to this Pod.
+
     spec:
       containers:
         - name: mongodb
+          # Name of the container (you can name it anything)
           image: mongo:latest
+          # The MongoDB Docker image to use.
+          # 'latest' will always pull the newest version — not ideal for production.
+          # Instead, specify a stable tag (like mongo:6.0).
+
+          volumeMounts:
+            - name: mongo-volume
+              mountPath: /data/db
+              # This is where MongoDB stores its database files inside the container.
+              # The name 'mongo-volume' must match a volume defined below.
+              # Basically, this mounts your persistent storage to MongoDB’s data directory.
+
+      volumes:
+        - name: mongo-volume
+          persistentVolumeClaim:
+            claimName: pvc-volume
+            # This connects the Deployment to your PersistentVolumeClaim (PVC).
+            # The PVC (from persistentVolumeClaim.yaml) acts like a middleman that links
+            # the Pod to the actual PersistentVolume (from persistentVolume.yaml).
+            # This ensures that even if the Pod restarts, data inside /data/db persists.
 
 ---
 # ------------------------------------------------------------------
@@ -26,13 +65,32 @@ spec:
 # ------------------------------------------------------------------
 
 apiVersion: v1
+# Using core API for Service objects.
+
 kind: Service
+# A Service in Kubernetes exposes a set of Pods as a network service.
+# Here, it provides stable access to the MongoDB Pod using a consistent DNS name.
+
 metadata:
   name: mongodb-service
+  # The name of the Service. Other Pods (like your React app) will use this name 
+  # to connect to MongoDB internally within the cluster.
+
 spec:
   selector:
     app: mongodb
+    # The Service targets Pods with the label 'app: mongodb'.
+    # This matches the label from your Deployment template.
+
   ports:
     - name: tcp
       port: 27017
+      # Port exposed by the Service (inside the cluster)
       targetPort: 27017
+      # Port that MongoDB listens on inside the container.
+      # Both are 27017 because that’s MongoDB’s default port.
+
+  # By default, this creates a ClusterIP service.
+  # That means it’s only accessible within the cluster — perfect for backend-only access.
+  # If you want to connect externally (for dev/testing), you could set:
+  # type: NodePort or LoadBalancer

@@ -1,8 +1,28 @@
 apiVersion: v1
+# Every Kubernetes resource has an API version.
+# 'v1' means it's a core object (like ConfigMap, Pod, Service, etc.)
+
 kind: ConfigMap
+# 'kind' tells Kubernetes what type of resource this is.
+# A ConfigMap is used to store configuration data in key-value format (like environment variables),
+# so that sensitive or environment-dependent values can be managed separately from the app code.
+
 metadata:
   name: mongo-config
+  # The name used to identify this ConfigMap inside the cluster.
+  # You’ll reference this name in other files (like mongodb.yaml) to inject these values into containers.
+
 data:
-  # below will be same as the env variables present in the .env file while developing locally
-  MONGO_INITDB_ROOT_USERNAME: "admin"
-  MONGO_INITDB_ROOT_PASSWORD: "password"
+  # The 'data' field contains your actual key-value pairs.
+  # Think of it like entries in a .env file.
+
+  # These two variables are the same ones you’d use locally in your .env file while developing.
+  # They define the MongoDB root user credentials.
+  MONGO_INITDB_ROOT_USERNAME: "admin"   # Root username for MongoDB initialization
+  MONGO_INITDB_ROOT_PASSWORD: "password" # Root password for MongoDB initialization
+
+  # These values will be injected into the MongoDB container as environment variables.
+  # The MongoDB image automatically uses these to create a default admin user.
+  # ⚠️ Important:
+  # - Don’t hardcode real credentials in production; use Secrets instead of ConfigMap for sensitive data.
+  # - This ConfigMap only stores non-sensitive or demo-level configs.

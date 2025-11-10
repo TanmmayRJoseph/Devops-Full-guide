@@ -2,33 +2,65 @@
 # DEPLOYMENT FOR React App
 # ------------------------------------------------------------------
 apiVersion: apps/v1
+# Using 'apps/v1' because we’re creating a Deployment (which manages Pods).
+
 kind: Deployment
+# A Deployment ensures your React app container (frontend) stays running and can be scaled if needed.
+
 metadata:
   name: reactapp-deployment
+  # Name of this Deployment object.
+
 spec:
   replicas: 1
+  # Number of identical Pods (containers) you want.
+  # For frontend apps, you can increase replicas (like 3 or 5) for load balancing later.
+
   selector:
     matchLabels:
       app: reactapp
+  # This selector tells the Deployment which Pods it manages.
+  # It matches Pods that have the label `app: reactapp`.
+
   template:
     metadata:
       labels:
         app: reactapp
+      # These labels are attached to the Pod template.
+      # The Service (below) will use the same label to send traffic to this Pod.
+
     spec:
       containers:
         - name: reactapp
+          # The container name inside the Pod.
           image: reactapp:latest
+          # Docker image for your React app.
+          # ⚠️ Important:
+          #   - 'reactapp:latest' should be built and available in your local Docker registry or pushed to Docker Hub.
+          #   - In production, use a version tag like 'reactapp:v1'.
+
           env:
+            # Environment variables for the React app.
+            # These will typically store MongoDB connection credentials or URLs.
+
             - name: MONGODB
               valueFrom:
                 configMapKeyRef:
-                  name: mongodb-config # this shoulf match the name of your ConfigMap
+                  name: mongo-config # ❌ Typo here — should be 'mongo-config' (based on your first file)
                   key: MONGO_INITDB_ROOT_USERNAME
+              # This pulls the MongoDB username from the ConfigMap (mongo-config.yaml).
+              # It allows your app to connect securely without hardcoding credentials.
+
             - name: MONGODB_PASSWORD
               valueFrom:
                 configMapKeyRef:
-                  name: mongodb-config
+                  name: mongodb-config # Again, fix to 'mongo-config'
                   key: MONGO_INITDB_ROOT_PASSWORD
+              # This pulls the MongoDB password from the ConfigMap.
+
+              # These environment variables can then be used in your React app or backend (if it connects via API).
+              # Note: React apps are static; so usually you'd have a backend API that uses these credentials.
+              # If this is just a frontend served through Nginx, these env vars won't be used inside browser code directly.
 
 ---
 # ------------------------------------------------------------------
@@ -37,13 +69,31 @@ spec:
 
 apiVersion: v1
 kind: Service
+# A Service exposes your React app to the outside world (browser access).
+
 metadata:
   name: reactapp-service
+  # Name of the Service object.
+
 spec:
   ports:
     - name: http
       port: 5173
+      # This is the port exposed by the Service inside the cluster (or to the external world).
+      # 5173 is used by Vite’s dev server — adjust if your container runs on a different port.
+
       targetPort: 80
+      # The port inside the container that actually serves the app.
+      # Example: if your React app is served by Nginx, it listens on port 80 inside the container.
+
   selector:
     app: reactapp
+    # This Service routes requests to Pods with the label `app: reactapp`.
+    # This matches the labels in your Deployment Pod template.
+
   type: LoadBalancer
+  # This makes the Service accessible externally (outside the cluster).
+  # For local clusters (like Minikube or Docker Desktop):
+  #   - You’ll get an external IP or a tunnel URL.
+  # For cloud (like AWS, GCP, Azure):
+  #   - This creates a real cloud load balancer with a public IP.

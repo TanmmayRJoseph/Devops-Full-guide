@@ -1,0 +1,56 @@
+# ----------------------------------------------------------
+# multiple containers in single pod -> Deployment
+# ----------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # Unique key of the Deployment instance
+  name: deployment-example
+spec:
+  # 3 Pods should exist at all times.
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        # Apply this label to pods and default
+        # the Deployment label selector to this value
+        app: nginx
+    spec:
+      # here we define multiple containers in a single pod
+      containers:
+        # 1️⃣ first container
+        - name: nginx
+          image: nginx:1.14
+        # 2️⃣ second container
+        - name: mongodb
+          image: mongo:latest
+        # 3️⃣ third container
+        - name: redis
+          image: redis:latest
+
+---
+# ------------------------------------------------------
+# multiple containers in single pod -> Service
+# ------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  # Unique key of the Service instance
+  name: service-example
+spec:
+  ports:
+    # Accept traffic sent to port 80
+    - name: http
+      port: 80
+      targetPort: 5173 # this should match the port exposed in the Dockerfile
+  selector:
+    # Loadbalance traffic across Pods matching
+    # this label selector
+    app: nginx
+  # Create an HA proxy in the cloud provider
+  # with an External IP address - *Only supported
+  # by some cloud providers*
+  type: LoadBalancer

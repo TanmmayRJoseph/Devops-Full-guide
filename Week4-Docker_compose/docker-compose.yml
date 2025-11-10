@@ -1,0 +1,127 @@
+# ✅ Remove version key — it's deprecated in modern Docker Compose (v2+)
+# version: '3.9' ← not needed anymore
+
+services:
+  # ==============================
+  # 🧠 FRONTEND SERVICE
+  # ==============================
+  frontend:
+    build:
+      context: ./Frontend              # 👈 Path to your frontend folder
+      dockerfile: Dockerfile           # 👈 Dockerfile inside Frontend folder
+      target: development              # 👈 Build the "development" stage by default
+      # target: production              # 👈 (Uncomment for prod build later)
+    ports:
+      - "5173:5173"                    # 👈 Expose Vite dev server on localhost:5173
+      # - "80:80"                      # 👈 (For prod, map Nginx port to localhost:80)
+    volumes:
+      - ./Frontend:/app                # 👈 Sync local code for instant updates
+      - /app/node_modules              # 👈 Prevent overwriting container’s node_modules
+    environment:
+      - NODE_ENV=development           # 👈 Environment variable for mode
+      # - VITE_API_URL=http://localhost:3000  # 👈 (Optional) Connect frontend → backend API
+    depends_on:
+      - backend                        # 👈 Wait for backend before starting
+    restart: unless-stopped            # 👈 Auto-restart if container stops unexpectedly
+    # command: ["npm", "run", "dev"]   # 👈 Already defined inside Dockerfile, but you can override here
+    # networks:
+    #   - dev_network                  # 👈 Optional: custom network (for future use)
+
+  # ==============================
+  # ⚙️ BACKEND SERVICE
+  # ==============================
+  backend:
+    build:
+      context: ./Backend               # 👈 Path to backend folder
+      dockerfile: Dockerfile
+      target: development              # 👈 Use dev mode (TypeScript + hot reload)
+      # target: production              # 👈 For prod: runs compiled JS instead
+    ports:
+      - "3000:3000"                    # 👈 Expose backend on localhost:3000
+    volumes:
+      - ./Backend:/app                 # 👈 Mount source code for live updates
+      - /app/node_modules              # 👈 Keep container’s node_modules isolated
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgres://postgres:postgres@db_data:5432/postgres
+        # 👆 Connection string for Postgres container
+      # - PORT=3000                    # 👈 (Optional) Define port for flexibility
+    depends_on:
+      - db_data                        # 👈 Backend starts only after DB is ready
+    restart: unless-stopped            # 👈 Restart if something crashes
+    # command: ["npm", "run", "dev"]   # 👈 Can override here for different scripts
+
+  # ==============================
+  # 🗃️ DATABASE SERVICE (Postgres)
+  # ==============================
+  db_data:
+    image: postgres:15-alpine          # 👈 Lightweight Postgres image
+    container_name: db_data
+    restart: always                    # 👈 Always restart DB on crash
+    environment:
+      - POSTGRES_USER=postgres         # 👈 Default DB username
+      - POSTGRES_PASSWORD=postgres     # 👈 Default DB password
+      - POSTGRES_DB=postgres           # 👈 Default DB name
+    ports:
+      - "5432:5432"                    # 👈 Allow external access from host (optional)
+    volumes:
+      - db_data:/var/lib/postgresql/data  
+        # 👈 Persist database data (won’t reset on container restart)
+    # healthcheck:                     # 👈 (Optional) Add healthcheck for better readiness
+    #   test: ["CMD-SHELL", "pg_isready -U postgres"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+
+# ==============================
+# 💾 NAMED VOLUMES
+# ==============================
+volumes:
+  db_data:                             # 👈 Persistent Postgres data storage
+
+# ==============================
+# 🌐 (Optional) NETWORK SECTION
+# ==============================
+# networks:
+#   dev_network:
+#     driver: bridge
+#     name: custom_dev_network
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ==============================
+# 📘 USEFUL DOCKER COMMANDS (keep for reference)
+# ==============================
+# 🔹 Build all services:
+#     docker-compose build
+#
+# 🔹 Start in background (detached mode):
+#     docker-compose up -d
+#
+# 🔹 Stop all containers:
+#     docker-compose down
+#
+# 🔹 View logs (for all or a specific service):
+#     docker-compose logs -f
+#     docker-compose logs -f backend
+#
+# 🔹 Rebuild after Dockerfile changes:
+#     docker-compose up --build
+#
+# 🔹 Access container shell:
+#     docker exec -it backend sh
+#
+# 🔹 For production build:
+#     docker-compose build --no-cache
+#     docker-compose -f docker-compose.yml up -d

@@ -1,0 +1,65 @@
+# REFERENCE LINK -> https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#deployment-v1-apps
+# -----------------------------------------------------------------------------
+# 🧠 BASIC IDEA:
+# This YAML file tells Kubernetes to run and manage a group of identical Pods (your app containers)
+# through something called a *Deployment*.
+# Think of Deployment as a manager that keeps your app running — even if some pods crash.
+# -----------------------------------------------------------------------------
+
+apiVersion: apps/v1 # Version of the Kubernetes API to use for the Deployment
+kind: Deployment # Kind defines the type of object we're creating — here, it's a Deployment
+
+metadata:
+  # 📛 Basic information about the Deployment
+  name: deployment-react-k8s # Unique name to identify this Deployment (must be lowercase and hyphenated)
+
+  labels:
+    # 🏷️ Labels are like name tags — help Kubernetes identify and group related resources
+    app: react-k8s # Make sure this label stays consistent across metadata, selector, and template
+
+spec: # 🧩 "spec" defines what we want this Deployment to do or manage
+  replicas: 3 # ⚙️ Number of Pod copies (replicas) that should always be running
+
+  selector:
+    # 🎯 Selector tells Deployment which Pods it controls based on labels
+    matchLabels:
+      app: react-k8s # Must exactly match the app label under template.metadata.labels
+
+  template:
+    # 🧱 Template defines what each Pod will look like — a mini blueprint for your containers
+    metadata:
+      labels:
+        # 📌 Labels applied to each Pod created by this Deployment
+        # Must match the selector above, or Deployment won’t link to the Pods
+        app: react-k8s
+
+    spec:
+      # 🧺 This section defines what's inside each Pod (like which containers it should run)
+      containers:
+        - name: react-k8s-container # 🧩 The name of your container (can be anything meaningful)
+
+          # 🖼️ The Docker image to pull and run inside this container
+          # Make sure your image is available publicly on Docker Hub or your private registry
+          image: tanmmay1102/k8s-react:latest
+          ports:
+            - containerPort: 3000
+
+          # 📦 Ports your app listens on inside the container
+          # If your app runs on port 80, you must expose that port here
+
+          # 🌐 Optional: Add resources, env variables, or probes later for more control
+          # resources:
+          #   limits:
+          #     cpu: "500m"
+          #     memory: "256Mi"
+# -----------------------------------------------------------------------------
+# 💡 THINGS TO REMEMBER WHEN CONFIGURING A DEPLOYMENT FILE:
+# 1️⃣ app label must be consistent everywhere (metadata, selector, template).
+# 2️⃣ metadata.name must be unique in the namespace.
+# 3️⃣ Use valid characters — no `/`, `:`, or uppercase letters in labels or names.
+# 4️⃣ image must be accessible from Kubernetes (public Docker Hub or authorized registry).
+# 5️⃣ replicas define how many Pods you want — useful for scaling.
+# 6️⃣ template.spec.containers defines what runs inside each Pod (you can add multiple containers).
+# 7️⃣ Deployment automatically replaces crashed Pods with new ones — it’s self-healing.
+# 8️⃣ To make your app accessible, create a Service YAML (NodePort, ClusterIP, or LoadBalancer).
+# -----------------------------------------------------------------------------

@@ -1,0 +1,42 @@
+# REFERENCE LINK -> https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.34/#service-v1-core
+# -----------------------------------------------------------------------------
+# 🧠 BASIC IDEA:
+# A Service in Kubernetes acts like a *network bridge* that connects your app's Pods to the outside world (or within the cluster).
+# Even if Pods die and restart, the Service keeps a stable IP address and forwards traffic to healthy Pods.
+# -----------------------------------------------------------------------------
+
+apiVersion: v1
+kind: Service # 💡 Kind tells Kubernetes this YAML defines a Service (not a Deployment)
+
+metadata:
+  # 📛 Basic information about this Service
+  name: service-react-k8s # Unique name for the Service (used to link or reference it)
+
+spec:
+  # ⚙️ The spec defines how this Service behaves and how traffic is routed
+  selector:
+    # 🎯 The selector connects this Service to Pods that have this label
+    # This must exactly match the "app" label from the Deployment file (template.metadata.labels)
+    app: react-k8s
+
+  ports:
+    # 🚪 Ports define how traffic flows from outside → Service → Pod
+    - name: http                # A friendly name for the port (optional but recommended)
+      port: 80                  # The port on the Service — what users connect to
+      targetPort: 5173           # The port inside the Pod (your app listens here)
+      # If your React app runs on a different port (like 3000 inside the container),
+      # set targetPort: 3000 and port: 80 to map external traffic to internal app
+
+  # 🌍 Service Type — defines how accessible your app will be
+  type: LoadBalancer # For local clusters (like minikube, Docker Desktop) you can also use NodePort
+
+# -----------------------------------------------------------------------------
+# 💡 THINGS TO REMEMBER WHEN CONFIGURING A SERVICE FILE:
+# 1️⃣ The "selector.app" must match the Deployment's "template.metadata.labels.app" exactly.
+# 2️⃣ "port" = the Service’s port (external view), "targetPort" = the port your app listens on inside the container.
+# 3️⃣ Use type: ClusterIP for internal access only (default), NodePort for local testing, or LoadBalancer for cloud exposure.
+# 4️⃣ A Service load-balances traffic across all matching Pods automatically.
+# 5️⃣ The Service gives a stable endpoint even if Pods die or restart.
+# 6️⃣ Make sure your Deployment’s containers expose the same port number as your targetPort.
+# 7️⃣ You can run `kubectl get svc` to check the external IP once the Service is created.
+# -----------------------------------------------------------------------------

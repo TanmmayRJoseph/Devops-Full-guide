@@ -1,0 +1,38 @@
+# ------------------------------------------------------------------
+# DEPLOYMENT FOR MONGODB
+# ------------------------------------------------------------------
+
+apiVersion: apps/v1
+kind: Deployment
+meatdata:
+  name: mongodb-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    meatdata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:latest
+
+---
+# ------------------------------------------------------------------
+# SERVICE FOR MONGODB
+# ------------------------------------------------------------------
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-service
+spec:
+  selector:
+    app: mongodb
+  ports:
+    - name: tcp
+      port: 27017
+      targetPort: 27017

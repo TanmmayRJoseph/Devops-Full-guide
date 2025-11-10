@@ -1,0 +1,49 @@
+# ------------------------------------------------------------------
+# DEPLOYMENT FOR React App
+# ------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reactapp-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reactapp
+  template:
+    metadata:
+      labels:
+        app: reactapp
+    spec:
+      containers:
+        - name: reactapp
+          image: reactapp:latest
+          env:
+            - name: MONGODB
+              valueFrom:
+                configMapKeyRef:
+                  name: mongodb-config # this shoulf match the name of your ConfigMap
+                  key: MONGO_INITDB_ROOT_USERNAME
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: mongodb-config
+                  key: MONGO_INITDB_ROOT_PASSWORD
+
+---
+# ------------------------------------------------------------------
+# SERVICE FOR React App
+# ------------------------------------------------------------------
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: reactapp-service
+spec:
+  ports:
+    - name: http
+      port: 5173
+      targetPort: 80
+  selector:
+    app: reactapp
+  type: LoadBalancer
